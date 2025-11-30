@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Deep RL Maze Solver</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #111; color: white; font-family: sans-serif; }
+        #ui-container {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        button:hover { background: #45a049; }
+        select {
+            padding: 8px;
+            font-size: 16px;
+            border-radius: 4px;
+            background: #333;
+            color: white;
+            border: 1px solid #555;
+        }
+        #status { margin-top: 15px; font-weight: bold; color: #aaa; }
+        #stats { margin-top: 10px; font-size: 14px; color: #888; }
+    </style>
+</head>
+<body>
+    <div id="ui-container">
+        <h2>Deep RL Maze Solver</h2>
+        <div>
+            <label for="difficulty">Dificuldade:</label>
+            <select id="difficulty">
+                <option value="Easy">Fácil (5x5)</option>
+                <option value="Medium">Médio (7x7)</option>
+                <option value="Hard">Difícil (10x10)</option>
+            </select>
+        </div>
+        <button id="start-btn">Gerar & Treinar</button>
+        <div id="status">Aguardando...</div>
+        <div id="stats"></div>
+    </div>
+    
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Main Logic -->
+    <script src="main.js"></script>
+</body>
+</html>
