@@ -18,6 +18,7 @@ let animationSpeed = 300; // ms per step
 let lastStepTime = 0;
 let isAnimating = false;
 let currentMazeDims = { rows: 0, cols: 0 };
+let logInterval = null;
 
 function initThree() {
     scene = new THREE.Scene();
@@ -28,9 +29,9 @@ function initThree() {
     camera.lookAt(0, 0, 0);
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(window.innerWidth - 350, window.innerHeight); // Adjust for terminal width
     renderer.shadowMap.enabled = true;
-    document.body.appendChild(renderer.domElement);
+    document.getElementById('canvas-container').appendChild(renderer.domElement);
 
     // Lights
     const ambientLight = new THREE.AmbientLight(0x404040);
@@ -54,9 +55,10 @@ function initThree() {
 }
 
 function onWindowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight;
+    const width = window.innerWidth - 350;
+    camera.aspect = width / window.innerHeight;
     camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(width, window.innerHeight);
 }
 
 function createMazeMesh(maze) {
@@ -196,11 +198,31 @@ document.getElementById('start-btn').addEventListener('click', () => {
     const diffStr = document.getElementById('difficulty').value;
     document.getElementById('status').innerText = "Executando Haskell (pode demorar)...";
 
+    // Limpa terminal e intervalo anterior
+    document.getElementById('terminal-output').innerText = "Aguardando início do processo...";
+    if (logInterval) clearInterval(logInterval);
+
     // Determina a URL base da API
     // Se estiver rodando na porta 3000 (nosso servidor Node), usa caminho relativo.
     // Se estiver rodando em outra porta (ex: Live Server 5500), usa localhost:3000.
     const API_BASE_URL = window.location.port === '3000' ? '' : 'http://localhost:3000';
     console.log("API URL:", API_BASE_URL);
+
+    // Inicia polling de logs
+    logInterval = setInterval(() => {
+        fetch(`${API_BASE_URL}/logs.txt?t=${new Date().getTime()}`)
+            .then(res => res.text())
+            .then(text => {
+                const terminal = document.getElementById('terminal-output');
+                if (terminal.innerText !== text) {
+                    terminal.innerText = text;
+                    // Auto-scroll to bottom
+                    const container = document.getElementById('terminal-container');
+                    container.scrollTop = container.scrollHeight;
+                }
+            })
+            .catch(err => console.error("Log poll error:", err));
+    }, 500);
 
     // 1. Chama o servidor para rodar o Haskell
     fetch(`${API_BASE_URL}/run`, {
@@ -215,13 +237,22 @@ document.getElementById('start-btn').addEventListener('click', () => {
         .then(runData => {
             if (!runData.success) throw new Error(runData.message);
 
-            document.getElementById('status').innerText = "Carregando dados...";
-
-            // 2. Carrega o JSON gerado
-            const timestamp = new Date().getTime();
-            const jsonUrl = `${API_BASE_URL}/maze_data.json?t=${timestamp}`;
-            console.log("Fetching JSON from:", jsonUrl);
-            return fetch(jsonUrl);
+            // Busca logs finais
+            return fetch(`${API_BASE_URL}/logs.txt?t=${new Date().getTime()}`)
+                .then(res => res.text())
+                .then(text => {
+                    document.getElementById('terminal-output').innerText = text;
+                    const container = document.getElementById('terminal-container');
+                    container.scrollTop = container.scrollHeight;
+                })
+                .then(() => {
+                    document.getElementById('status').innerText = "Carregando dados...";
+                    // 2. Carrega o JSON gerado
+                    const timestamp = new Date().getTime();
+                    const jsonUrl = `${API_BASE_URL}/maze_data.json?t=${timestamp}`;
+                    console.log("Fetching JSON from:", jsonUrl);
+                    return fetch(jsonUrl);
+                });
         })
         .then(response => {
             if (!response.ok) throw new Error("Erro ao carregar maze_data.json.");
@@ -243,6 +274,12 @@ document.getElementById('start-btn').addEventListener('click', () => {
         .catch(err => {
             console.error(err);
             document.getElementById('status').innerText = "Erro: " + err.message;
+        })
+        .finally(() => {
+            if (logInterval) {
+                clearInterval(logInterval);
+                logInterval = null;
+            }
         });
 });// Init
 initThree();

@@ -1,0 +1,32 @@
+Iniciando execução...
+=== DEEP RL MAZE SOLVER ===
+Escolha a dificuldade (1-Facil, 2-Medio, 3-Dificil):
+Gerando labirinto n�vel Hard...
+Gerando labirinto...
+Labirinto Gerado:
+P       # 
+  #    #  
+ #  #  #  
+ # ##   # 
+#        #
+    # # # 
+  #   #   
+  ## ###  
+##        
+# #  #   X
+
+Iniciando Treinamento...
+Epoca 300/3000 | Epsilon: 0.90 | Reward: -651.00
+Epoca 600/3000 | Epsilon: 0.80 | Reward: -213.00
+Epoca 900/3000 | Epsilon: 0.70 | Reward: -49.00
+Epoca 1200/3000 | Epsilon: 0.60 | Reward: -28.00
+Epoca 1500/3000 | Epsilon: 0.50 | Reward: -7.00
+Epoca 1800/3000 | Epsilon: 0.40 | Reward: 63.00
+Epoca 2100/3000 | Epsilon: 0.30 | Reward: 83.00
+Epoca 2400/3000 | Epsilon: 0.20 | Reward: 76.00
+Epoca 2700/3000 | Epsilon: 0.10 | Reward: 71.00
+Epoca 3000/3000 | Epsilon: 0.05 | Reward: 78.00
+
+Treino finalizado! Gerando solucao...
+Solucao encontrada com 19 passos.
+Dados exportados para maze_data.json
