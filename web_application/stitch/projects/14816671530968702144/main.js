@@ -205,7 +205,7 @@ function solveMaze(maze, weights) {
 // 5. Three.js Visualization
 // ==========================================
 
-let scene, camera, renderer;
+let scene, camera, renderer, controls;
 let mazeGroup;
 let agentMesh;
 let animationPath = [];
@@ -235,6 +235,14 @@ function initThree() {
     dirLight.position.set(5, 10, 5);
     dirLight.castShadow = true;
     scene.add(dirLight);
+
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
+    controls.dampingFactor = 0.05;
+    controls.screenSpacePanning = false;
+    controls.minDistance = 10;
+    controls.maxDistance = 50;
+    controls.maxPolarAngle = Math.PI / 2;
 
     window.addEventListener('resize', onWindowResize, false);
     animate();
@@ -328,6 +336,8 @@ function createMazeMesh(maze) {
 
 function animate(time) {
     requestAnimationFrame(animate);
+
+    controls.update(); // only required if controls.enableDamping = true, or if controls.autoRotate = true
 
     if (isAnimating && animationPath.length > 0) {
         if (time - lastStepTime > animationSpeed) {
