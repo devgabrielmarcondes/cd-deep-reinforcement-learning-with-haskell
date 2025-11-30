@@ -1,7 +1,7 @@
 module Main where
 
 import System.Random
-import Data.List (maximumBy, elemIndex, nub)
+import Data.List (maximumBy, elemIndex, nub, intercalate)
 import Data.Ord (comparing)
 import Text.Printf (printf)
 import Control.Monad (when)
@@ -215,7 +215,7 @@ trainLoop maze conf epoch w
         trainLoop maze conf (epoch + 1) newW
 
 -- ==========================================
--- 5. Visualização e Teste
+-- 5. Visualização e Exportação
 -- ==========================================
 
 printMaze :: Maze -> Position -> IO ()
@@ -229,29 +229,36 @@ printMaze maze (pr, pc) = do
         | r == pr && c == pc = 'A' -- Agente
         | otherwise          = (maze !! r) !! c
 
-testAgent :: Maze -> Weights -> Position -> Int -> IO ()
-testAgent maze w pos steps = do
-    printMaze maze pos
-    let cell = getCell maze pos
-    
-    if cell == 'X'
-    then do
-        putStrLn $ ">>> VITÓRIA! O agente chegou ao X em " ++ show steps ++ " passos! <<<"
-        return () -- ENCERRA A RECURSÃO AQUI
-    else if steps > 50 
-    then putStrLn ">>> GAME OVER: O agente cansou (muitos passos)."
-    else do
-        let cols = length (head maze)
-        let sIdx = posToIndex cols pos
-        
-        -- Epsilon 0 para jogar sério
-        action <- chooseAction w sIdx 0.0
-        let (nextPos, _, _) = step maze pos action
-        
-        putStrLn "Pressione ENTER para o proximo passo..."
-        _ <- getLine
-        
-        testAgent maze w nextPos (steps + 1)
+getSolutionPath :: Maze -> Weights -> Position -> Int -> IO [Position]
+getSolutionPath maze w pos steps
+    | steps > 100 = return [] -- Evita loops infinitos
+    | otherwise = do
+        let cell = getCell maze pos
+        if cell == 'X' 
+            then return [pos]
+            else do
+                let cols = length (head maze)
+                let sIdx = posToIndex cols pos
+                
+                -- Epsilon 0 para jogar sério
+                action <- chooseAction w sIdx 0.0
+                let (nextPos, _, _) = step maze pos action
+                
+                if nextPos == pos 
+                    then return [pos] -- Travou
+                    else do
+                        rest <- getSolutionPath maze w nextPos (steps + 1)
+                        return (pos : rest)
+
+exportToJSON :: Maze -> [Position] -> String
+exportToJSON maze path = 
+    let 
+        rows = length maze
+        cols = length (head maze)
+        mazeStr = "[" ++ intercalate "," (map (\r -> "\"" ++ r ++ "\"") maze) ++ "]"
+        pathStr = "[" ++ intercalate "," (map (\(r,c) -> "{\"r\":" ++ show r ++ ",\"c\":" ++ show c ++ "}") path) ++ "]"
+    in
+        "{\"rows\": " ++ show rows ++ ", \"cols\": " ++ show cols ++ ", \"maze\": " ++ mazeStr ++ ", \"path\": " ++ pathStr ++ "}"
 
 -- ==========================================
 -- 6. Main
@@ -283,6 +290,12 @@ main = do
     putStrLn "\nIniciando Treinamento..."
     finalWeights <- trainLoop maze conf 1 initWeights
     
-    putStrLn "\nTreino finalizado! Iniciando Demonstração..."
-    putStrLn "O agente 'A' deve chegar no 'X'."
-    testAgent maze finalWeights (0,0) 0
+    putStrLn "\nTreino finalizado! Gerando solucao..."
+    path <- getSolutionPath maze finalWeights (0,0) 0
+    
+    putStrLn $ "Solucao encontrada com " ++ show (length path) ++ " passos."
+    
+    let jsonOutput = exportToJSON maze path
+    let outputFile = "maze_data.json"
+    writeFile outputFile jsonOutput
+    putStrLn $ "Dados exportados para " ++ outputFile
